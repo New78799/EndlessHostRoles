@@ -646,9 +646,6 @@ internal static class SetHudActivePatch
                 return;
         }
 
-        PlayerControl player = PlayerControl.LocalPlayer;
-        if (!player) return;
-
         switch (player.GetCustomRole())
         {
             case CustomRoles.Sheriff:
