@@ -679,7 +679,10 @@ internal static class SetHudActivePatch
                 __instance.SabotageButton?.ToggleVisible(true);
                 break;
         }
-
+        
+        if (Main.PlayerStates.TryGetValue(player.PlayerId, out PlayerState ps) && ps.SubRoles.Contains(CustomRoles.Oblivious))
+            __instance.ReportButton?.ToggleVisible(false);
+        
         if (Options.UseMeetingShapeshift.GetBool() && PlayerControl.LocalPlayer.UsesMeetingShapeshift() && GameStates.IsMeeting)
         {
             __instance.AbilityButton?.Show();
