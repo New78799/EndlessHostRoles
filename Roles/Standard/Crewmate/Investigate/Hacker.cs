@@ -148,6 +148,19 @@ public class Hacker : RoleBase
             pc.Notify(GetString("OutOfAbilityUsesDoMoreTasks"));
     }
 
+    public override void OnMurder(PlayerControl killer, PlayerControl target)
+    {
+        if (!killer.Is(CustomRoles.Bloodlust) || UseLimit == null || UseLimitSeconds == null) return;
+
+        if (!killer.IsModdedClient() && UseLimit.ContainsKey(killer.PlayerId))
+            UseLimit[killer.PlayerId] += HackerAbilityUseGainWithEachTaskCompleted.GetFloat() * 5;
+        else if (UseLimitSeconds.ContainsKey(killer.PlayerId))
+            UseLimitSeconds[killer.PlayerId] += HackerAbilityUseGainWithEachTaskCompleted.GetInt() * 5 * ModdedClientAbilityUseSecondsMultiplier.GetInt();
+    
+        if (UseLimitSeconds.ContainsKey(killer.PlayerId))
+            SendRPC(killer.PlayerId, UseLimitSeconds[killer.PlayerId]);
+    }
+
     public override void OnTaskComplete(PlayerControl pc, int completedTaskCount, int totalTaskCount)
     {
         if (!pc.IsAlive() || UseLimit == null || UseLimitSeconds == null) return;
@@ -194,7 +207,7 @@ public class Hacker : RoleBase
         }
         else
         {
-            opts.Mode = pc.IsMadmate() ? MapOptions.Modes.Sabotage : MapOptions.Modes.Normal;
+            opts.Mode = pc.IsMadmate() || pc.Is(CustomRoles.Bloodlust) ? MapOptions.Modes.Sabotage : MapOptions.Modes.Normal;
             pc.Notify(GetString("OutOfAbilityUsesDoMoreTasks"));
         }
     }
@@ -207,7 +220,7 @@ public class Hacker : RoleBase
         {
             map.Close();
             pc.Notify(GetString("OutOfAbilityUsesDoMoreTasks"));
-            opts.Mode = pc.IsMadmate() ? MapOptions.Modes.Sabotage : MapOptions.Modes.Normal;
+            opts.Mode = pc.IsMadmate() || pc.Is(CustomRoles.Bloodlust) ? MapOptions.Modes.Sabotage : MapOptions.Modes.Normal;
             return;
         }
 
@@ -225,11 +238,12 @@ public class Hacker : RoleBase
 
     public override void GetProgressText(byte playerId, bool comms, StringBuilder resultText)
     {
+        resultText.Append(GetTaskCount(playerId, comms));
+
         if (playerId.IsPlayerModdedClient()) return;
         if (UseLimit == null || !UseLimit.TryGetValue(playerId, out float limit)) return;
 
-        resultText.Append(GetTaskCount(playerId, comms))
-            .Append(" <color=#777777>-</color> ")
+        resultText.Append(" <color=#777777>-</color> ")
             .Append(ColorPrefix(limit < 1 ? Color.red : Color.white))
             .Append(Math.Round(limit, 1))
             .Append("</color>");

@@ -418,7 +418,7 @@ internal static class HudManagerPatch
                     if ((usesPetInsteadOfKill && player.Is(CustomRoles.Nimble) && player.GetRoleTypes() == RoleTypes.Engineer) || player.Is(CustomRoles.GM))
                         __instance.AbilityButton?.SetEnabled();
 
-                    __instance.SabotageButton?.ToggleVisible(player.GetEstimatedRoleTypes() is RoleTypes.ImpostorGhost or RoleTypes.Impostor or RoleTypes.Phantom or RoleTypes.Shapeshifter or RoleTypes.Viper);
+                    //__instance.SabotageButton?.ToggleVisible(player.GetEstimatedRoleTypes() is RoleTypes.ImpostorGhost or RoleTypes.Impostor or RoleTypes.Phantom or RoleTypes.Shapeshifter or RoleTypes.Viper);
 
                     float abilityUseLimit = player.GetAbilityUseLimit();
 
@@ -670,6 +670,19 @@ internal static class SetHudActivePatch
         IsActive = isActive;
         if (!isActive) return;
 
+        PlayerControl player = PlayerControl.LocalPlayer;
+        if (!player) return;
+
+        if (Main.PlayerStates.TryGetValue(player.PlayerId, out PlayerState ps) && ps.SubRoles.Contains(CustomRoles.Oblivious))
+            __instance.ReportButton?.ToggleVisible(false);
+
+        bool impBasis = player.GetEstimatedRoleTypes() is RoleTypes.ImpostorGhost or RoleTypes.Impostor or RoleTypes.Phantom or RoleTypes.Shapeshifter or RoleTypes.Viper;
+        bool correctGameMode = Options.CurrentGameMode is CustomGameMode.Standard or CustomGameMode.Snowdown;
+
+        __instance.KillButton?.ToggleVisible(player.CanUseKillButton());
+        __instance.ImpostorVentButton?.ToggleVisible(player.CanUseImpostorVentButton());
+        __instance.SabotageButton?.ToggleVisible(impBasis && correctGameMode && player.CanUseSabotage());
+
         switch (Options.CurrentGameMode)
         {
             case CustomGameMode.Snowdown:
@@ -732,9 +745,6 @@ internal static class SetHudActivePatch
                 return;
         }
 
-        PlayerControl player = PlayerControl.LocalPlayer;
-        if (!player) return;
-
         switch (player.GetCustomRole())
         {
             case CustomRoles.Sheriff:
@@ -765,16 +775,13 @@ internal static class SetHudActivePatch
             case CustomRoles.Parasite:
             case CustomRoles.Renegade:
             case CustomRoles.Magician:
+            case CustomRoles.Hacker:
                 __instance.SabotageButton?.ToggleVisible(true);
                 break;
         }
 
-        if (Main.PlayerStates.TryGetValue(player.PlayerId, out PlayerState ps) && ps.SubRoles.Contains(CustomRoles.Oblivious))
-            __instance.ReportButton?.ToggleVisible(false);
-
-        __instance.KillButton?.ToggleVisible(player.CanUseKillButton());
-        __instance.ImpostorVentButton?.ToggleVisible(player.CanUseImpostorVentButton());
-        __instance.SabotageButton?.ToggleVisible(player.GetEstimatedRoleTypes() is RoleTypes.ImpostorGhost or RoleTypes.Impostor or RoleTypes.Phantom or RoleTypes.Shapeshifter or RoleTypes.Viper);
+        if (player.Is(CustomRoles.Mischievous))
+            __instance.SabotageButton?.ToggleVisible(true);
 
         if (Options.UseMeetingShapeshift.GetBool() && PlayerControl.LocalPlayer.UsesMeetingShapeshift() && GameStates.IsMeeting)
         {
@@ -881,7 +888,8 @@ internal static class MapBehaviourShowPatch
         else if (opts.Mode is MapOptions.Modes.Normal or MapOptions.Modes.Sabotage)
         {
             bool impBasis = player.GetEstimatedRoleTypes() is RoleTypes.ImpostorGhost or RoleTypes.Impostor or RoleTypes.Phantom or RoleTypes.Shapeshifter or RoleTypes.Viper;
-            opts.Mode = impBasis ? MapOptions.Modes.Sabotage : MapOptions.Modes.Normal;
+            bool correctGameMode = Options.CurrentGameMode is CustomGameMode.Standard or CustomGameMode.Snowdown;
+            opts.Mode = impBasis && correctGameMode ? MapOptions.Modes.Sabotage : MapOptions.Modes.Normal;
         }
 
         if (Main.GodMode.Value) opts.ShowLivePlayerPosition = true;

@@ -1411,13 +1411,10 @@ internal static class ExtendedPlayerControl
             };
         }
 
-/*
         public bool CanUseSabotage()
         {
-            if (!player.IsAlive() || player.Data.Role.Role == RoleTypes.GuardianAngel) return false;
             return Main.PlayerStates.TryGetValue(player.PlayerId, out PlayerState state) && state.Role.CanUseSabotage(player);
         }
-*/
 
         public RoleTypes GetGhostRoleBasis()
         {
